@@ -1,6 +1,6 @@
-Access here: [Gel Labeler](https://cubejerry.github.io/gel-label/)
+Access here: [Gel Labeller](https://cubejerry.github.io/gel-label/)
 
-# Gel Labeler
+# Gel Labeller
 
 A lightweight browser-based tool for labelling gel images and exporting clean annotated figures.
 
