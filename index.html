@@ -1,0 +1,1202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Label your gels</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,500;0,9..40,600;1,9..40,300&display=swap');
+
+  :root {
+    --bg: #0e0f11;
+    --surface: #16181c;
+    --surface2: #1e2126;
+    --border: #2a2d35;
+    --accent: #58B2DC;
+    --accent2: #4fc3f7;
+    --warn: #f9a825;
+    --text: #e8eaed;
+    --text-dim: #e8eaed;
+    --text-dimmer: #3d4148;
+    --red: #ff6b6b;
+    --radius: 8px;
+    --panel-w: 300px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── HEADER ── */
+  header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 10px 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    flex-shrink: 0;
+    z-index: 10;
+  }
+
+  .logo {
+    font-family: 'DM Mono', monospace;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--accent);
+    letter-spacing: 0.04em;
+  }
+
+  .logo span { color: var(--text-dim); font-weight: 300; }
+
+  .step-bar {
+    display: flex;
+    gap: 4px;
+    margin-left: 12px;
+  }
+
+  .step {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-family: 'DM Mono', monospace;
+    color: var(--text-dim);
+    border: 1px solid transparent;
+    transition: all 0.2s;
+    cursor: default;
+    white-space: nowrap;
+  }
+
+  .step.active {
+    background: rgb(24 71 238 / 8%);
+    border-color: rgb(1 218 247 / 30%);
+    color: var(--accent);
+  }
+
+  .step.done {
+    color: var(--text-dimmer);
+    background: rgba(255,255,255,0.02);
+  }
+
+  .step-num {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px;
+    flex-shrink: 0;
+  }
+  .step.active .step-num { background: var(--accent); color: #000; }
+  .step.done .step-num { background: var(--text-dimmer); color: #000; }
+
+  /* ── MAIN LAYOUT ── */
+  .main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* ── SIDE PANEL ── */
+  .panel {
+    width: var(--panel-w);
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  .panel-section {
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .panel-section:last-child { border-bottom: none; }
+
+  .section-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 10px;
+  }
+
+  .field:last-child { margin-bottom: 0; }
+
+  .field label {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-family: 'DM Mono', monospace;
+  }
+
+  input[type="text"], input[type="date"], select, textarea {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 7px 10px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    width: 100%;
+    transition: border-color 0.15s;
+    outline: none;
+  }
+
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--accent);
+  }
+
+  textarea { resize: vertical; min-height: 60px; }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: var(--radius);
+    font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text);
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .btn-primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #000;
+  }
+  .btn-primary:hover { background: #5dd67d; border-color: #5dd67d; color: #000; }
+
+  .btn-danger {
+    background: transparent;
+    border-color: var(--red);
+    color: var(--red);
+  }
+  .btn-danger:hover { background: rgba(255,107,107,0.1); }
+
+  .btn-sm { padding: 4px 10px; font-size: 12px; }
+
+  .btn-ghost {
+    background: transparent;
+    border-color: transparent;
+    color: var(--text-dim);
+  }
+  .btn-ghost:hover { color: var(--red); border-color: transparent; background: transparent; }
+
+  /* ── UNIT TOGGLE BUTTONS ── */
+  .btn-unit {
+    background: var(--bg);
+    color: var(--text-dim);
+  }
+  .btn-unit.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(88, 178, 220, 0.1);
+  }
+
+  .panel-scroll {
+    overflow-y: auto;
+    flex: 1;
+  }
+
+  /* ── LANE LIST ── */
+  .lane-list { display: flex; flex-direction: column; gap: 4px; }
+
+  .lane-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .lane-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    width: 18px;
+    flex-shrink: 0;
+    text-align: right;
+  }
+
+  .lane-row input {
+    flex: 1;
+    padding: 5px 8px;
+    font-size: 12px;
+  }
+
+  /* ── CANVAS AREA ── */
+  .canvas-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    overflow: auto;
+    background:
+      radial-gradient(ellipse at 20% 30%, rgba(126,232,162,0.03) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 70%, rgba(79,195,247,0.03) 0%, transparent 60%),
+      var(--bg);
+    padding: 24px;
+    position: relative;
+  }
+
+  /* ── DROP ZONE ── */
+  .drop-zone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    width: 100%;
+    max-width: 600px;
+    height: 400px;
+    border: 2px dashed var(--border);
+    border-radius: 16px;
+    transition: all 0.2s;
+    cursor: pointer;
+    position: relative;
+    margin: auto;
+  }
+
+  .drop-zone:hover, .drop-zone.drag-over {
+    border-color: var(--accent);
+    background: rgba(126, 232, 162, 0.04);
+  }
+
+  .drop-zone input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%; height: 100%;
+  }
+
+  .drop-icon { font-size: 48px; opacity: 0.4; line-height: 1; }
+  .drop-title { font-size: 18px; font-weight: 500; color: var(--text); }
+
+  /* ── WORKSPACE ── */
+  #workspace {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    max-width: none;
+  }
+
+  /* ── FIGURE CONTAINER (exportable) ── */
+  #figure-container {
+    background: white;
+    padding: 45px 40px 30px; /* Increased padding to protect ladder kDa header */
+    border-radius: 4px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+    user-select: none;
+    width: max-content;
+    margin: 0 auto;
+  }
+
+  .fig-title-area { margin-bottom: 24px; }
+  .fig-title {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 32px;
+    font-weight: bold;
+    color: #111;
+    text-align: center;
+    white-space: pre-wrap;
+    line-height: 1.4;
+  }
+  .fig-date {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 32px;
+    color: #444;
+    text-align: center;
+    margin-bottom: 80px;
+  }
+
+  /* ── FLEX LAYOUT FOR IMAGE & LEGEND ── */
+  .figure-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 30px;
+  }
+
+  /* ── GEL + OVERLAY ── */
+  .gel-wrapper {
+    position: relative;
+    display: inline-block;
+    line-height: 0;
+    flex-shrink: 0;
+    transition: margin-left 0.2s; /* Smooth transition when ladder is added */
+  }
+
+  #gel-img {
+    display: block;
+    max-width: none;
+    max-height: 65vh;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
+
+  /* ── LADDER SYSTEM ── */
+  #ladder-area {
+    position: absolute;
+    left: -100px; /* Pull it outside the gel image to the left */
+    top: 0;
+    bottom: 0;
+    width: 90px;
+    display: none; /* Hidden by default */
+    pointer-events: none; /* Let clicks pass through empty spaces */
+    line-height: normal;
+  }
+
+  .ladder-header {
+    position: absolute;
+    top: -38px;
+    right: 12px;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 28px;
+    font-weight: bold;
+    color: #111;
+  }
+
+  #ladder-labels-container {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+  }
+
+  .ladder-label {
+    position: absolute;
+    right: 12px;
+    transform: translateY(-50%);
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 24px;
+    font-weight: bold;
+    color: #111;
+    cursor: ns-resize;
+    user-select: none;
+    white-space: nowrap;
+    pointer-events: auto; /* Re-enable pointer events for dragging */
+    padding: 5px; /* Give a slightly larger hit area */
+    transition: color 0.1s;
+  }
+
+  .ladder-label:hover, .ladder-label.dragging {
+    color: var(--accent);
+  }
+
+  /* The little tick mark pointing to the gel */
+  .ladder-label::after {
+    content: '';
+    position: absolute;
+    right: -10px;
+    top: 50%;
+    width: 8px;
+    height: 3px;
+    background: #111;
+  }
+  .ladder-label.dragging::after { background: var(--accent); }
+
+
+  /* Lane number labels */
+  #lane-labels-top {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 0; pointer-events: none;
+  }
+  .lane-label-top {
+    position: absolute;
+    transform: translateX(-50%) translateY(-100%);
+    top: -10px;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 32px;
+    font-weight: bold;
+    color: #111;
+    text-align: center;
+    padding-bottom: 15px;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+
+  /* ── LEGEND ── */
+  .fig-legend {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 32px;
+    color: #222;
+    line-height: 1.8;
+    text-align: left;
+    min-width: 120px;
+  }
+  .fig-legend-title { font-weight: bold; margin-bottom: 2px; }
+
+  /* ── CLICK MODE OVERLAY ── */
+  #click-overlay {
+    display: none;
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    cursor: crosshair;
+    z-index: 5;
+  }
+  #click-overlay.active { display: block; }
+
+  /* ── INSTRUCTION TOAST ── */
+  .toast {
+    position: absolute;
+    bottom: 20px; left: 50%; transform: translateX(-50%);
+    background: var(--surface);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    padding: 8px 16px; border-radius: 20px;
+    font-size: 12px; font-family: 'DM Mono', monospace;
+    pointer-events: none; opacity: 0; transition: opacity 0.3s;
+    white-space: nowrap; z-index: 100;
+  }
+  .toast.show { opacity: 1; }
+
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+
+  .mode-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-family: 'DM Mono', monospace; font-size: 11px;
+    padding: 3px 8px; border-radius: 4px;
+    background: rgba(126,232,162,0.1); color: var(--accent);
+    border: 1px solid rgba(126,232,162,0.25);
+  }
+
+  .pulse {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: currentColor; animation: pulse 1.5s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+  .count-row { display: flex; align-items: center; gap: 8px; }
+  .count-row button {
+    width: 28px; height: 28px; border-radius: 6px;
+    border: 1px solid var(--border); background: var(--surface2); color: var(--text);
+    font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s; flex-shrink: 0;
+  }
+  .count-row button:hover { border-color: var(--accent); color: var(--accent); }
+  .count-display {
+    font-family: 'DM Mono', monospace; font-size: 16px;
+    color: var(--text); min-width: 28px; text-align: center;
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none; width: 100%; height: 4px;
+    border-radius: 2px; background: var(--border); outline: none; cursor: pointer;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 14px; height: 14px;
+    border-radius: 50%; background: var(--accent); cursor: pointer;
+  }
+
+  .gel-controls { display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; align-items: center; }
+  .hidden { display: none !important; }
+  .cropper-container { z-index: 10; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Tham Lab Gel Annotator</div>
+  <div class="step-bar">
+    <div class="step active" id="step1"><span class="step-num">1</span> Load Image</div>
+    <div class="step" id="step2"><span class="step-num">2</span> Annotate</div>
+    <div class="step" id="step3"><span class="step-num">3</span> Export</div>
+  </div>
+</header>
+
+<div class="main">
+  <div class="panel">
+    <div class="panel-scroll">
+
+      <div class="panel-section">
+        <div class="section-label">Figure Info</div>
+        <div class="field">
+          <label>Title</label>
+          <textarea id="fig-title-input" rows="2" placeholder="e.g. SDS-PAGE Analysis"></textarea>
+        </div>
+        <div class="field">
+          <label>Date</label>
+          <input type="date" id="fig-date-input">
+        </div>
+      </div>
+
+      <div class="panel-section hidden" id="img-adjust-section">
+        <div class="section-label">Image Adjustments</div>
+        <button class="btn btn-sm" id="btn-start-crop" style="width:100%; margin-bottom: 12px;">◩ Crop Image</button>
+        <div id="crop-actions" class="hidden" style="display:flex; gap:8px; margin-bottom: 12px;">
+          <button class="btn btn-primary btn-sm" id="btn-apply-crop" style="flex:1">✓ Apply</button>
+          <button class="btn btn-danger btn-sm" id="btn-cancel-crop" style="flex:1">✕ Cancel</button>
+        </div>
+        <div class="field">
+          <label>Brightness <span id="brightness-val" style="color:var(--accent)">0</span></label>
+          <input type="range" id="brightness" min="-100" max="100" value="0">
+        </div>
+        <div class="field">
+          <label>Contrast <span id="contrast-val" style="color:var(--accent)">0</span></label>
+          <input type="range" id="contrast" min="-100" max="100" value="0">
+        </div>
+        <div class="field" style="margin-top:8px;">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;color:var(--text)">
+            <input type="checkbox" id="invert-img" style="width:auto;accent-color:var(--accent)"> Invert colours
+          </label>
+        </div>
+      </div>
+
+      <div class="panel-section" id="ladder-setup-section">
+        <div class="section-label">DNA/Protein Ladder Setup</div>
+        
+        <div class="field" style="margin-bottom: 12px;">
+          <label>Unit</label>
+          <div style="display: flex; gap: 4px;">
+            <button class="btn btn-sm btn-unit active" data-unit="kDa" style="flex:1">kDa</button>
+            <button class="btn btn-sm btn-unit" data-unit="bp" style="flex:1">bp</button>
+            <button class="btn btn-sm btn-unit" data-unit="Kb" style="flex:1">Kb</button>
+          </div>
+        </div>
+
+        <button class="btn btn-sm" id="btn-preset-ladder" style="width:100%; margin-bottom: 8px;" disabled>+ Add 250kb ladder</button>
+        <button class="btn btn-sm" id="btn-custom-ladder" style="width:100%; margin-bottom: 8px;" disabled>+ Add Custom Ladder</button>
+        <button class="btn btn-danger btn-sm hidden" id="btn-clear-ladder" style="width:100%;">✕ Clear Ladder</button>
+      </div>
+
+      <div class="panel-section" id="lane-setup-section">
+        <div class="section-label">Lane Setup</div>
+        <div class="field">
+          <label>Number of lanes</label>
+          <div class="count-row">
+            <button id="lane-minus">−</button>
+            <span class="count-display" id="lane-count-display">5</span>
+            <button id="lane-plus">+</button>
+            <span style="font-size:11px; color:var(--text-dim); margin-left:4px;">lanes</span>
+          </div>
+        </div>
+        <div id="lane-mode-section">
+          <div class="field" style="margin-bottom:8px;"><label>Lane positions</label></div>
+          <button class="btn btn-sm" id="btn-mark-first" disabled><span>◎</span> Click First Lane</button>
+          <div style="height:6px"></div>
+          <button class="btn btn-sm" id="btn-mark-last" disabled><span>◎</span> Click Last Lane</button>
+          <div style="height:6px"></div>
+          <button class="btn btn-sm" id="btn-clear-marks" style="margin-top:2px;" disabled>↺ Reset Positions</button>
+        </div>
+      </div>
+
+      <div class="panel-section" id="labels-section">
+        <div class="section-label">Lane Labels</div>
+        <div class="lane-list" id="lane-label-list"></div>
+        <div style="margin-top:10px;">
+          <button class="btn btn-sm" id="btn-add-lane-row" style="width:100%">+ Add lane</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="canvas-area" id="canvas-area">
+    <div class="drop-zone" id="drop-zone">
+      <input type="file" id="file-input" accept="image/*,.tiff,.tif">
+      <div class="drop-icon">🧬</div>
+      <div class="drop-title">Drop your gel image here</div>
+      <div class="drop-sub">Drag &amp; drop or click to browse</div>
+    </div>
+
+    <div id="workspace">
+      <div class="gel-controls">
+        <div id="mode-indicator" class="mode-badge hidden">
+          <span class="pulse"></span> <span id="mode-text">Click first lane centre</span>
+        </div>
+      </div>
+
+      <div id="figure-container">
+        <div class="fig-title-area" id="fig-title-area" style="display:none">
+          <div class="fig-title" id="fig-title-display"></div>
+          <div class="fig-date" id="fig-date-display"></div>
+        </div>
+
+        <div class="figure-content">
+          <div class="gel-wrapper" id="gel-wrapper">
+            
+            <div id="ladder-area">
+              <div class="ladder-header">kDa</div>
+              <div id="ladder-labels-container"></div>
+            </div>
+
+            <img id="gel-img" src="" alt="Gel">
+            <div id="lane-labels-top"></div>
+            <div id="click-overlay"></div>
+          </div>
+
+          <div class="fig-legend" id="fig-legend" style="display:none;">
+            <div class="fig-legend-title" id="fig-legend-title"></div>
+            <div id="fig-legend-body"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="export-row" class="hidden" style="margin-top:20px; margin-bottom: 40px; display:flex; gap:8px;">
+        <button class="btn btn-primary" id="btn-export-png">↓ Export PNG</button>
+        <button class="btn btn-primary" id="btn-export-svg" style="background:#f57c00; border-color:#f57c00;">↓ Export SVG (Affinity Designer)</button>
+        <button class="btn" id="btn-export-clipboard">⧉ Copy to Clipboard</button>
+        <button class="btn btn-ghost" id="btn-load-new">⟳ New Image</button>
+      </div>
+
+    </div>
+    <div class="toast" id="toast"></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/utif@3.1.0/UTIF.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<script>
+const state = {
+  imageFile: null, imageSrc: null, laneCount: 5,
+  firstLaneX: null, lastLaneX: null, clickMode: null,
+  brightness: 0, contrast: 0, invert: false, labels: []
+};
+
+let cropperInstance = null;
+
+const dropZone = document.getElementById('drop-zone');
+const fileInput = document.getElementById('file-input');
+const workspace = document.getElementById('workspace');
+const gelImg = document.getElementById('gel-img');
+const gelWrapper = document.getElementById('gel-wrapper');
+const laneLabelsTop = document.getElementById('lane-labels-top');
+const clickOverlay = document.getElementById('click-overlay');
+const figTitleInput = document.getElementById('fig-title-input');
+const figDateInput = document.getElementById('fig-date-input');
+const figTitleDisplay = document.getElementById('fig-title-display');
+const figDateDisplay = document.getElementById('fig-date-display');
+const figTitleArea = document.getElementById('fig-title-area');
+const figLegend = document.getElementById('fig-legend');
+const figLegendBody = document.getElementById('fig-legend-body');
+const laneCountDisplay = document.getElementById('lane-count-display');
+const laneLabelList = document.getElementById('lane-label-list');
+const btnMarkFirst = document.getElementById('btn-mark-first');
+const btnMarkLast = document.getElementById('btn-mark-last');
+const btnClearMarks = document.getElementById('btn-clear-marks');
+const modeIndicator = document.getElementById('mode-indicator');
+const modeText = document.getElementById('mode-text');
+const toast = document.getElementById('toast');
+const exportRow = document.getElementById('export-row');
+const imgAdjustSection = document.getElementById('img-adjust-section');
+const figureContainer = document.getElementById('figure-container');
+
+// Ladder Elements
+const ladderArea = document.getElementById('ladder-area');
+const ladderLabelsContainer = document.getElementById('ladder-labels-container');
+const btnPresetLadder = document.getElementById('btn-preset-ladder');
+const btnCustomLadder = document.getElementById('btn-custom-ladder');
+const btnClearLadder = document.getElementById('btn-clear-ladder');
+const ladderHeader = document.querySelector('.ladder-header'); 
+const unitButtons = document.querySelectorAll('.btn-unit');
+// Cropper UI elements
+const btnStartCrop = document.getElementById('btn-start-crop');
+const cropActions = document.getElementById('crop-actions');
+const btnApplyCrop = document.getElementById('btn-apply-crop');
+const btnCancelCrop = document.getElementById('btn-cancel-crop');
+
+figDateInput.valueAsDate = new Date();
+figTitleInput.addEventListener('input', updateFigTitle);
+figDateInput.addEventListener('change', updateFigTitle);
+
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('drag-over');
+  if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', e => { if (e.target.files[0]) loadFile(e.target.files[0]); });
+
+function loadFile(file) {
+  state.imageFile = file;
+  const reader = new FileReader();
+  const isTiff = file.name.toLowerCase().endsWith('.tif') || file.name.toLowerCase().endsWith('.tiff');
+
+  reader.onload = e => {
+    try {
+      if (isTiff) {
+        showToast('Processing TIFF file...');
+        const buffer = e.target.result;
+        const ifds = UTIF.decode(buffer);
+        UTIF.decodeImage(buffer, ifds[0]);
+        const rgba = UTIF.toRGBA8(ifds[0]);
+        
+        const canvas = document.createElement('canvas');
+        canvas.width = ifds[0].width;
+        canvas.height = ifds[0].height;
+        const ctx = canvas.getContext('2d');
+        const imgData = ctx.createImageData(canvas.width, canvas.height);
+        imgData.data.set(rgba);
+        ctx.putImageData(imgData, 0, 0);
+        
+        state.imageSrc = canvas.toDataURL('image/png');
+      } else {
+        state.imageSrc = e.target.result;
+      }
+      finishLoadingImage();
+    } catch (err) {
+      showToast('Error reading image file: ' + err.message);
+      console.error(err);
+    }
+  };
+
+  if (isTiff) {
+    reader.readAsArrayBuffer(file);
+  } else {
+    reader.readAsDataURL(file);
+  }
+}
+
+function finishLoadingImage() {
+  gelImg.src = state.imageSrc;
+  gelImg.onload = () => {
+    dropZone.style.display = 'none';
+    workspace.style.display = 'flex';
+    exportRow.classList.remove('hidden');
+    imgAdjustSection.classList.remove('hidden');
+    
+    // Enable workflow buttons
+    btnMarkFirst.disabled = false;
+    btnPresetLadder.disabled = false;
+    btnCustomLadder.disabled = false;
+    
+    setStep(2);
+    showToast('Image loaded! Crop if needed, or set up ladder and lanes.');
+  };
+}
+
+// ── LADDER LOGIC ──
+// Unit Toggle Logic
+unitButtons.forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    // Remove active class from all buttons
+    unitButtons.forEach(b => b.classList.remove('active'));
+    // Add active class to the clicked button
+    e.target.classList.add('active');
+    
+    // Update the text on the canvas
+    const unit = e.target.dataset.unit;
+    ladderHeader.textContent = unit;
+  });
+});
+function makeDraggable(el) {
+  let startY = 0;
+  let startTopPx = 0;
+
+  function dragStart(e) {
+    e.preventDefault();
+    startY = e.clientY;
+    
+    const containerHeight = ladderLabelsContainer.clientHeight;
+    const currentTop = el.style.top;
+    
+    if (currentTop.endsWith('%')) {
+      startTopPx = (parseFloat(currentTop) / 100) * containerHeight;
+    } else {
+      startTopPx = parseFloat(currentTop) || 0;
+    }
+
+    document.addEventListener('mousemove', drag);
+    document.addEventListener('mouseup', dragEnd);
+    el.style.cursor = 'grabbing';
+    el.classList.add('dragging');
+  }
+
+  function drag(e) {
+    const dy = e.clientY - startY;
+    const containerHeight = ladderLabelsContainer.clientHeight;
+    let newTopPx = startTopPx + dy;
+
+    if (newTopPx < 0) newTopPx = 0;
+    if (newTopPx > containerHeight) newTopPx = containerHeight;
+
+    el.style.top = (newTopPx / containerHeight * 100) + '%';
+  }
+
+  function dragEnd() {
+    document.removeEventListener('mousemove', drag);
+    document.removeEventListener('mouseup', dragEnd);
+    el.style.cursor = 'ns-resize';
+    el.classList.remove('dragging');
+  }
+
+  el.addEventListener('mousedown', dragStart);
+}
+
+function generateLadder(values) {
+  ladderLabelsContainer.innerHTML = '';
+  ladderArea.style.display = 'block';
+  gelWrapper.style.marginLeft = '100px'; 
+  btnClearLadder.classList.remove('hidden');
+
+  const n = values.length;
+  values.forEach((val, i) => {
+    const lbl = document.createElement('div');
+    lbl.className = 'ladder-label';
+    lbl.textContent = val;
+    lbl.style.top = n > 1 ? (i / (n - 1) * 100) + '%' : '50%';
+    
+    ladderLabelsContainer.appendChild(lbl);
+    makeDraggable(lbl);
+  });
+}
+
+btnPresetLadder.addEventListener('click', () => {
+  generateLadder([250, 150, 100, 75, 50, 37, 25, 20, 15, 10]);
+  showToast('Ladder added! Drag the numbers to align them.');
+});
+
+btnCustomLadder.addEventListener('click', () => {
+  const input = prompt("Enter ladder values separated by commas:", "200, 150, 100, 50, 25");
+  if (input) {
+    const vals = input.split(',').map(s => s.trim()).filter(s => s);
+    if (vals.length > 0) {
+      generateLadder(vals);
+      showToast('Custom ladder added! Drag the numbers to align.');
+    }
+  }
+});
+
+btnClearLadder.addEventListener('click', () => {
+  ladderArea.style.display = 'none';
+  ladderLabelsContainer.innerHTML = '';
+  gelWrapper.style.marginLeft = '0';
+  btnClearLadder.classList.add('hidden');
+});
+
+// ── CROPPER LOGIC ──
+btnStartCrop.addEventListener('click', () => {
+  if (cropperInstance) return;
+  btnStartCrop.classList.add('hidden');
+  cropActions.classList.remove('hidden');
+  laneLabelsTop.style.display = 'none'; 
+  
+  cropperInstance = new Cropper(gelImg, {
+    viewMode: 1, autoCropArea: 0.8, background: false, zoomable: false,
+  });
+});
+
+btnCancelCrop.addEventListener('click', () => {
+  if (cropperInstance) cropperInstance.destroy();
+  cropperInstance = null;
+  btnStartCrop.classList.remove('hidden');
+  cropActions.classList.add('hidden');
+  laneLabelsTop.style.display = 'block';
+});
+
+btnApplyCrop.addEventListener('click', () => {
+  if (!cropperInstance) return;
+  const canvas = cropperInstance.getCroppedCanvas();
+  state.imageSrc = canvas.toDataURL('image/png');
+  
+  cropperInstance.destroy(); cropperInstance = null;
+  gelImg.src = state.imageSrc;
+  btnStartCrop.classList.remove('hidden');
+  cropActions.classList.add('hidden');
+  laneLabelsTop.style.display = 'block';
+  
+  clearLanes(); showToast('Image cropped! Please remark your lanes.');
+});
+
+// ── LANE LOGIC ──
+document.getElementById('lane-minus').addEventListener('click', () => { if (state.laneCount > 1) { state.laneCount--; syncLaneCount(); }});
+document.getElementById('lane-plus').addEventListener('click', () => { if (state.laneCount < 30) { state.laneCount++; syncLaneCount(); }});
+
+function syncLaneCount() {
+  laneCountDisplay.textContent = state.laneCount;
+  while (state.labels.length < state.laneCount) state.labels.push('');
+  while (state.labels.length > state.laneCount) state.labels.pop();
+  renderLabelList(); renderLaneOverlay();
+}
+
+function clearLanes() {
+  state.firstLaneX = null; state.lastLaneX = null;
+  renderLaneOverlay();
+  btnMarkLast.disabled = true; btnClearMarks.disabled = true;
+}
+
+btnMarkFirst.addEventListener('click', () => enterClickMode('first'));
+btnMarkLast.addEventListener('click', () => enterClickMode('last'));
+btnClearMarks.addEventListener('click', () => { clearLanes(); showToast('Lanes cleared.'); });
+
+function enterClickMode(mode) {
+  state.clickMode = mode;
+  clickOverlay.classList.add('active');
+  modeIndicator.classList.remove('hidden');
+  modeText.textContent = mode === 'first' ? 'Click centre of FIRST lane' : 'Click centre of LAST lane';
+}
+
+clickOverlay.addEventListener('click', e => {
+  if (!state.clickMode) return;
+  const rect = clickOverlay.getBoundingClientRect();
+  const xFrac = (e.clientX - rect.left) / rect.width;
+
+  if (state.clickMode === 'first') {
+    state.firstLaneX = xFrac;
+    btnMarkLast.disabled = false; btnClearMarks.disabled = false;
+    showToast('First lane set. Now click last lane.');
+  } else if (state.clickMode === 'last') {
+    state.lastLaneX = xFrac;
+    setStep(3);
+    showToast('Lanes set!');
+  }
+  clickOverlay.classList.remove('active');
+  modeIndicator.classList.add('hidden');
+  state.clickMode = null;
+  renderLaneOverlay();
+});
+
+function renderLaneOverlay() {
+  laneLabelsTop.innerHTML = '';
+  if (state.firstLaneX === null) return;
+  const n = state.laneCount;
+  const pos = (n === 1 || state.lastLaneX === null) 
+    ? [state.firstLaneX] 
+    : Array.from({length: n}, (_, i) => state.firstLaneX + (state.lastLaneX - state.firstLaneX) * (i / (n - 1)));
+
+  pos.forEach((frac, i) => {
+    const label = document.createElement('div');
+    label.className = 'lane-label-top';
+    label.style.left = (frac * 100) + '%';
+    label.textContent = (i + 1);
+    laneLabelsTop.appendChild(label);
+  });
+}
+
+function renderLabelList() {
+  laneLabelList.innerHTML = '';
+  for (let i = 0; i < state.laneCount; i++) {
+    const row = document.createElement('div'); row.className = 'lane-row';
+    const num = document.createElement('span'); num.className = 'lane-num'; num.textContent = (i + 1);
+    const inp = document.createElement('input'); inp.type = 'text';
+    inp.placeholder = i === 0 ? 'Ladder' : `Sample ${i}`;
+    inp.value = state.labels[i] || '';
+    inp.addEventListener('input', e => { state.labels[i] = e.target.value; renderLegend(); });
+    row.appendChild(num); row.appendChild(inp); laneLabelList.appendChild(row);
+  }
+}
+
+document.getElementById('btn-add-lane-row').addEventListener('click', () => {
+  state.laneCount++; syncLaneCount();
+});
+
+function renderLegend() {
+  const filled = state.labels.filter(l => l.trim());
+  if (!filled.length) { figLegend.style.display = 'none'; return; }
+  figLegend.style.display = 'block';
+  let html = '';
+  for (let i = 0; i < state.laneCount; i++) {
+    if (state.labels[i] && state.labels[i].trim()) {
+      html += `<div><b>${i + 1}:</b> ${state.labels[i].trim()}</div>`;
+    }
+  }
+  figLegendBody.innerHTML = html;
+}
+
+function updateFigTitle() {
+  const title = figTitleInput.value.trim();
+  const date = figDateInput.value;
+  figTitleArea.style.display = (title || date) ? 'block' : 'none';
+  figTitleDisplay.textContent = title;
+  figDateDisplay.textContent = date ? new Date(date).toLocaleDateString() : '';
+}
+
+function setStep(s) {
+  document.querySelectorAll('.step').forEach((el, i) => {
+    el.classList.toggle('active', i+1 === s);
+    el.classList.toggle('done', i+1 < s);
+  });
+}
+
+function showToast(m) {
+  toast.textContent = m; toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+function applyImageFilters() {
+  gelImg.style.filter = `brightness(${1 + state.brightness/100}) contrast(${1 + state.contrast/100}) ${state.invert ? 'invert(1)' : ''}`;
+}
+  
+document.getElementById('brightness').addEventListener('input', e => { state.brightness = parseInt(e.target.value); document.getElementById('brightness-val').textContent = state.brightness; applyImageFilters(); });
+document.getElementById('contrast').addEventListener('input', e => { state.contrast = parseInt(e.target.value); document.getElementById('contrast-val').textContent = state.contrast; applyImageFilters(); });
+document.getElementById('invert-img').addEventListener('change', e => { state.invert = e.target.checked; applyImageFilters(); });
+
+
+// ── BAKE FILTERS ONTO A CANVAS AND RETURN A DATA URL ──
+function getFilteredImageDataUrl() {
+  const img = document.getElementById('gel-img');
+  const w = img.naturalWidth;
+  const h = img.naturalHeight;
+  const offscreen = document.createElement('canvas');
+  offscreen.width = w;
+  offscreen.height = h;
+  const ctx = offscreen.getContext('2d');
+
+  // Apply brightness / contrast via CSS filter on the canvas context
+  ctx.filter = `brightness(${1 + state.brightness/100}) contrast(${1 + state.contrast/100}) ${state.invert ? 'invert(1)' : ''}`;
+  ctx.drawImage(img, 0, 0, w, h);
+  return offscreen.toDataURL('image/png');
+}
+
+// ── SVG EXPORT LOGIC ──
+document.getElementById('btn-export-svg').addEventListener('click', () => {
+    const container = figureContainer;
+    const rect = container.getBoundingClientRect();
+    const bgWidth = rect.width;
+    const bgHeight = rect.height;
+
+    let svg = `<svg width="${bgWidth}" height="${bgHeight}" viewBox="0 0 ${bgWidth} ${bgHeight}" xmlns="http://www.w3.org/2000/svg">`;
+    svg += `<rect width="100%" height="100%" fill="white" />`;
+
+    // 1. Add Image — use filter-baked data URL
+    const img = document.getElementById('gel-img');
+    const imgRect = img.getBoundingClientRect();
+    const contRect = container.getBoundingClientRect();
+    const imgX = imgRect.left - contRect.left;
+    const imgY = imgRect.top - contRect.top;
+    const filteredSrc = getFilteredImageDataUrl();
+    svg += `<image href="${filteredSrc}" x="${imgX}" y="${imgY}" width="${imgRect.width}" height="${imgRect.height}" />`;
+
+    // 2. Helper for Text
+    const addText = (el, xOffset = 0, yOffset = 0, align = "start") => {
+        if (!el) return "";
+        const r = el.getBoundingClientRect();
+        const x = r.left - contRect.left + xOffset;
+        const y = r.top - contRect.top + yOffset + (r.height * 0.8); // Adjust baseline
+        const size = window.getComputedStyle(el).fontSize;
+        const weight = window.getComputedStyle(el).fontWeight;
+        const color = window.getComputedStyle(el).color;
+        const text = el.textContent;
+        return `<text x="${x}" y="${y}" font-family="Arial, sans-serif" font-size="${size}" font-weight="${weight}" fill="${color}" text-anchor="${align}">${text}</text>`;
+    };
+
+    // 3. Title & Date
+    if (figTitleArea.style.display !== 'none') {
+        svg += addText(figTitleDisplay, figTitleDisplay.offsetWidth/2, 0, "middle");
+        svg += addText(figDateDisplay, figDateDisplay.offsetWidth/2, 0, "middle");
+    }
+
+    // 4. Lane Labels
+    document.querySelectorAll('.lane-label-top').forEach(lbl => {
+        svg += addText(lbl, 0, 0, "middle");
+    });
+
+    // 5. Ladder
+    if (ladderArea.style.display !== 'none') {
+        svg += addText(document.querySelector('.ladder-header'));
+        document.querySelectorAll('.ladder-label').forEach(lbl => {
+            const r = lbl.getBoundingClientRect();
+            const x = r.left - contRect.left;
+            const y = r.top - contRect.top + (r.height * 0.75);
+            svg += `<text x="${x}" y="${y}" font-family="Arial, sans-serif" font-size="24px" font-weight="bold" fill="black">${lbl.textContent}</text>`;
+            // Add the tick mark
+            svg += `<rect x="${x + r.width + 5}" y="${y - 8}" width="8" height="3" fill="black" />`;
+        });
+    }
+
+    // 6. Legend
+    if (figLegend.style.display !== 'none') {
+        const legendItems = figLegendBody.querySelectorAll('div');
+        legendItems.forEach((div, i) => {
+            const r = div.getBoundingClientRect();
+            const x = r.left - contRect.left;
+            const y = r.top - contRect.top + (r.height * 0.7);
+            // Replace bold tags with simple text for export
+            const cleanText = div.textContent;
+            svg += `<text x="${x}" y="${y}" font-family="Arial, sans-serif" font-size="32px" fill="black">${cleanText}</text>`;
+        });
+    }
+
+    svg += `</svg>`;
+
+    const blob = new Blob([svg], {type: 'image/svg+xml;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Gel_Analysis_${new Date().getTime()}.svg`;
+    link.click();
+    showToast('SVG Exported! Open in Affinity Designer.');
+});
+
+// Standard PNG Export — temporarily swap gel src to filtered version so html2canvas captures it correctly
+document.getElementById('btn-export-png').addEventListener('click', () => {
+  const img = document.getElementById('gel-img');
+  const originalSrc = img.src;
+  const originalFilter = img.style.filter;
+
+  // Bake filters into a data URL, then clear the CSS filter so html2canvas doesn't double-apply
+  const filteredSrc = getFilteredImageDataUrl();
+  img.src = filteredSrc;
+  img.style.filter = '';
+
+  // Wait a tick for the src swap to settle before capturing
+  requestAnimationFrame(() => {
+    html2canvas(figureContainer, { scale: 2, useCORS: true }).then(canvas => {
+      // Restore original
+      img.src = originalSrc;
+      img.style.filter = originalFilter;
+
+      const link = document.createElement('a');
+      link.download = 'gel-annotation.png';
+      link.href = canvas.toDataURL();
+      link.click();
+    }).catch(() => {
+      img.src = originalSrc;
+      img.style.filter = originalFilter;
+    });
+  });
+});
+
+document.getElementById('btn-load-new').addEventListener('click', () => location.reload());
+
+syncLaneCount();
+</script>
+</body>
+</html>
