@@ -575,7 +575,6 @@
         <div class="field" style="margin-bottom: 12px;">
           <label>Rotation <span id="rotation-val" style="color:var(--accent)">0°</span></label>
           <input type="range" id="rotation" min="-180" max="180" value="0" step="1">
-          <button class="btn btn-sm" id="btn-apply-rotation" style="width:100%; margin-top:8px;">Apply Rotation</button>
         </div>
         <div class="field">
           <label>Brightness <span id="brightness-val" style="color:var(--accent)">0</span></label>
@@ -702,7 +701,7 @@
 const state = {
   imageFile: null, imageSrc: null, laneCount: 5,
   firstLaneX: null, lastLaneX: null, clickMode: null,
-  brightness: 0, contrast: 0, invert: false, labels: []
+  brightness: 0, contrast: 0, invert: false, rotation: 0, labels: []
 };
 
 let cropperInstance = null;
@@ -748,7 +747,6 @@ const btnApplyCrop = document.getElementById('btn-apply-crop');
 const btnCancelCrop = document.getElementById('btn-cancel-crop');
 const rotationInput = document.getElementById('rotation');
 const rotationVal = document.getElementById('rotation-val');
-const btnApplyRotation = document.getElementById('btn-apply-rotation');
 
 figDateInput.valueAsDate = new Date();
 figTitleInput.addEventListener('input', updateFigTitle);
@@ -954,41 +952,25 @@ btnApplyCrop.addEventListener('click', () => {
 });
 
 
-function rotateImage(degrees) {
-  const sourceImg = document.getElementById('gel-img');
-  const radians = degrees * Math.PI / 180;
-  const sin = Math.abs(Math.sin(radians));
-  const cos = Math.abs(Math.cos(radians));
-  const srcW = sourceImg.naturalWidth;
-  const srcH = sourceImg.naturalHeight;
-  const canvas = document.createElement('canvas');
-  canvas.width = Math.ceil(srcW * cos + srcH * sin);
-  canvas.height = Math.ceil(srcW * sin + srcH * cos);
-  const ctx = canvas.getContext('2d');
-
-  ctx.translate(canvas.width / 2, canvas.height / 2);
-  ctx.rotate(radians);
-  ctx.drawImage(sourceImg, -srcW / 2, -srcH / 2);
-
-  state.imageSrc = canvas.toDataURL('image/png');
-  sourceImg.src = state.imageSrc;
-  clearLanes();
-  showToast(`Image rotated ${degrees}°! Please remark your lanes.`);
+function applyImageRotation() {
+  gelWrapper.style.transformOrigin = 'center center';
+  gelWrapper.style.transform = `rotate(${state.rotation}deg)`;
 }
 
+let committedRotation = 0;
+
 rotationInput.addEventListener('input', e => {
-  rotationVal.textContent = `${e.target.value}°`;
+  const nextRotation = parseInt(e.target.value, 10) || 0;
+  rotationVal.textContent = `${nextRotation}°`;
+  state.rotation = nextRotation;
+  applyImageRotation();
 });
 
-btnApplyRotation.addEventListener('click', () => {
-  const degrees = parseInt(rotationInput.value, 10);
-  if (!degrees) {
-    showToast('Rotation is 0° — no change applied.');
-    return;
-  }
-  rotateImage(degrees);
-  rotationInput.value = 0;
-  rotationVal.textContent = '0°';
+rotationInput.addEventListener('change', () => {
+  if (state.rotation === committedRotation) return;
+  committedRotation = state.rotation;
+  clearLanes();
+  showToast(`Rotation set to ${state.rotation}°. Please remark your lanes.`);
 });
 
 // ── LANE LOGIC ──
@@ -1120,14 +1102,21 @@ function getFilteredImageDataUrl() {
   const img = document.getElementById('gel-img');
   const w = img.naturalWidth;
   const h = img.naturalHeight;
+  const radians = state.rotation * Math.PI / 180;
+  const sin = Math.abs(Math.sin(radians));
+  const cos = Math.abs(Math.cos(radians));
+  const outW = Math.ceil(w * cos + h * sin);
+  const outH = Math.ceil(w * sin + h * cos);
   const offscreen = document.createElement('canvas');
-  offscreen.width = w;
-  offscreen.height = h;
+  offscreen.width = outW;
+  offscreen.height = outH;
   const ctx = offscreen.getContext('2d');
 
-  // Apply brightness / contrast via CSS filter on the canvas context
+  // Apply brightness / contrast via canvas filter, and bake rotation into exported image
   ctx.filter = `brightness(${1 + state.brightness/100}) contrast(${1 + state.contrast/100}) ${state.invert ? 'invert(1)' : ''}`;
-  ctx.drawImage(img, 0, 0, w, h);
+  ctx.translate(outW / 2, outH / 2);
+  ctx.rotate(radians);
+  ctx.drawImage(img, -w / 2, -h / 2, w, h);
   return offscreen.toDataURL('image/png');
 }
 
