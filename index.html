@@ -572,6 +572,11 @@
           <button class="btn btn-primary btn-sm" id="btn-apply-crop" style="flex:1">✓ Apply</button>
           <button class="btn btn-danger btn-sm" id="btn-cancel-crop" style="flex:1">✕ Cancel</button>
         </div>
+        <div class="field" style="margin-bottom: 12px;">
+          <label>Rotation <span id="rotation-val" style="color:var(--accent)">0°</span></label>
+          <input type="range" id="rotation" min="-180" max="180" value="0" step="1">
+          <button class="btn btn-sm" id="btn-apply-rotation" style="width:100%; margin-top:8px;">Apply Rotation</button>
+        </div>
         <div class="field">
           <label>Brightness <span id="brightness-val" style="color:var(--accent)">0</span></label>
           <input type="range" id="brightness" min="-100" max="100" value="0">
@@ -741,6 +746,9 @@ const btnStartCrop = document.getElementById('btn-start-crop');
 const cropActions = document.getElementById('crop-actions');
 const btnApplyCrop = document.getElementById('btn-apply-crop');
 const btnCancelCrop = document.getElementById('btn-cancel-crop');
+const rotationInput = document.getElementById('rotation');
+const rotationVal = document.getElementById('rotation-val');
+const btnApplyRotation = document.getElementById('btn-apply-rotation');
 
 figDateInput.valueAsDate = new Date();
 figTitleInput.addEventListener('input', updateFigTitle);
@@ -943,6 +951,44 @@ btnApplyCrop.addEventListener('click', () => {
   laneLabelsTop.style.display = 'block';
   
   clearLanes(); showToast('Image cropped! Please remark your lanes.');
+});
+
+
+function rotateImage(degrees) {
+  const sourceImg = document.getElementById('gel-img');
+  const radians = degrees * Math.PI / 180;
+  const sin = Math.abs(Math.sin(radians));
+  const cos = Math.abs(Math.cos(radians));
+  const srcW = sourceImg.naturalWidth;
+  const srcH = sourceImg.naturalHeight;
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.ceil(srcW * cos + srcH * sin);
+  canvas.height = Math.ceil(srcW * sin + srcH * cos);
+  const ctx = canvas.getContext('2d');
+
+  ctx.translate(canvas.width / 2, canvas.height / 2);
+  ctx.rotate(radians);
+  ctx.drawImage(sourceImg, -srcW / 2, -srcH / 2);
+
+  state.imageSrc = canvas.toDataURL('image/png');
+  sourceImg.src = state.imageSrc;
+  clearLanes();
+  showToast(`Image rotated ${degrees}°! Please remark your lanes.`);
+}
+
+rotationInput.addEventListener('input', e => {
+  rotationVal.textContent = `${e.target.value}°`;
+});
+
+btnApplyRotation.addEventListener('click', () => {
+  const degrees = parseInt(rotationInput.value, 10);
+  if (!degrees) {
+    showToast('Rotation is 0° — no change applied.');
+    return;
+  }
+  rotateImage(degrees);
+  rotationInput.value = 0;
+  rotationVal.textContent = '0°';
 });
 
 // ── LANE LOGIC ──
