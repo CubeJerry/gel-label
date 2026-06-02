@@ -1038,6 +1038,14 @@ function renderLaneOverlay() {
   });
 }
 
+function focusNextLaneLabelInput(currentIndex) {
+  const inputs = laneLabelList.querySelectorAll('input');
+  const nextInput = inputs[currentIndex + 1];
+  if (!nextInput) return;
+  nextInput.focus();
+  nextInput.select();
+}
+
 function renderLabelList() {
   laneLabelList.innerHTML = '';
   for (let i = 0; i < state.laneCount; i++) {
@@ -1047,6 +1055,11 @@ function renderLabelList() {
     inp.placeholder = i === 0 ? 'Ladder' : `Sample ${i}`;
     inp.value = state.labels[i] || '';
     inp.addEventListener('input', e => { state.labels[i] = e.target.value; renderLegend(); });
+    inp.addEventListener('keydown', e => {
+      if (e.key !== 'Enter') return;
+      e.preventDefault();
+      focusNextLaneLabelInput(i);
+    });
     row.appendChild(num); row.appendChild(inp); laneLabelList.appendChild(row);
   }
 }
